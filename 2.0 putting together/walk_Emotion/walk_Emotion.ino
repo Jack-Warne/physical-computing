@@ -1,0 +1,65 @@
+#include "MatrixLED.h"
+#include "UltrasonicSensor.h"
+#include "EEPROM.h"
+#include "Arduino.h"
+#include "robot.h"
+
+// Define pins for the ultrasonic sensor
+const int trigPin = 8;
+const int echoPin = 9;
+
+// Define servo pins for the robot
+const int YL = 10, YR = 11, RL = 12, RR = 13;
+
+// Create objects for the LED matrix, ultrasonic sensor, and robot
+matrixLED matrix;
+ultrasonicSensor ultrasonicSensor(trigPin, echoPin);
+robot robot;
+
+void setup() {
+    // Initialise the LED matrix
+    matrix.init(0x71);
+    matrix.flipVertical();
+    matrix.flipHorizontal();
+    matrix.setBrightness(5);
+    matrix.setBlink(VK16K33_BLINK_OFF);
+
+    // Initialise the ultrasonic sensor
+    ultrasonicSensor.begin();
+
+    // Initialise the robot
+    robot.init(YL, YR, RL, RR);
+    robot.setTrims(0, 0, 0, 0);
+    robot.attachServos();
+
+    // Start Serial communication
+    Serial.begin(9600);
+}
+
+void loop() {
+    // Get the distance in cm
+    long distanceCM = ultrasonicSensor.getDistanceCM();
+
+    // Respond based on distance
+    if (distanceCM <= 10) {
+        // Startled: Show startled face and turn around
+        matrix.showArray(100, 3); // Startled face
+        robot.turn(2, 1500, LEFT); // Turn left
+        delay(1000);
+    }  
+    else if (distanceCM > 10 && distanceCM <= 40) {
+        // Happy: Show happy face and dance
+        matrix.showArray(0, 2); // Happy face
+        robot.crusaito(2, 1000, 20, FORWARD); // Crusaito dance
+        delay(1000);
+    } 
+    else if (distanceCM > 40) {
+        // Sad: Show sad face and walk forward
+        matrix.showArray(0, 1); // Sad face
+        robot.walk(4, 1500, FORWARD); // Walk forward
+        delay(1000);
+    }
+
+    // Small delay before the next loop
+    delay(99);
+}
